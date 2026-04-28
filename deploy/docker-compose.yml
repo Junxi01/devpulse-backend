@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: devpulse-postgres
+    environment:
+      POSTGRES_DB: devpulse
+      POSTGRES_USER: devpulse
+      POSTGRES_PASSWORD: devpulse
+    ports:
+      - "5432:5432"
+    volumes:
+      - devpulse_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devpulse -d devpulse"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  devpulse_pgdata:
+
