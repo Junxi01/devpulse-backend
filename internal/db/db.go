@@ -2,34 +2,38 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DB struct {
-	SQL *sql.DB
+	Pool *pgxpool.Pool
 }
 
 func Open(ctx context.Context, databaseURL string) (*DB, error) {
-	d, err := sql.Open("pgx", databaseURL)
+	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
 		return nil, err
 	}
 
 	// Conservative defaults; can be tuned later.
-	d.SetMaxOpenConns(10)
-	d.SetMaxIdleConns(10)
-	d.SetConnMaxLifetime(30 * time.Minute)
+	cfg.MaxConns = 10
+	cfg.MinConns = 0
+	cfg.MaxConnLifetime = 30 * time.Minute
 
 	pingCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
-	if err := d.PingContext(pingCtx); err != nil {
-		_ = d.Close()
+
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+	if err := pool.Ping(pingCtx); err != nil {
+		pool.Close()
 		return nil, err
 	}
 
-	return &DB{SQL: d}, nil
+	return &DB{Pool: pool}, nil
 }
 

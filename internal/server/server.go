@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"devpulse-backend/internal/health"
 )
@@ -22,7 +22,7 @@ type Server struct {
 
 type Deps struct {
 	Logger *slog.Logger
-	DB     *sql.DB
+	DB     *pgxpool.Pool
 	Addr   string
 }
 

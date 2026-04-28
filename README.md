@@ -9,8 +9,9 @@ This repository currently provides a **Day 1 skeleton**: configuration loading, 
 - Go 1.22+
 - HTTP router: `chi`
 - Logging: standard library `log/slog` (JSON structured logging)
-- Database: PostgreSQL (`database/sql` + `pgx` driver)
+- Database: PostgreSQL (`pgxpool` + `sqlc`)
 - Config: environment variables + `.env` (`godotenv`)
+- Migrations: `golang-migrate`
 
 ## Quick Start (Local)
 
@@ -44,6 +45,45 @@ Expected responses:
 - `GET /healthz` -> `{"status":"ok"}`
 - `GET /readyz` -> `{"status":"ready"}` (returns 503 if the database is not reachable)
 
+## Database Migrations
+
+Migrations live in `migrations/` and are applied in order.
+
+Run migrations up:
+
+```bash
+make migrate-up
+```
+
+Rollback the latest migration:
+
+```bash
+make migrate-down
+```
+
+Reset the database schema (dangerous, drops all migrations then re-applies):
+
+```bash
+make db-reset
+```
+
+## sqlc (Type-safe Queries)
+
+SQL query sources live in:
+
+- `sql/queries/users.sql`
+- `sql/queries/projects.sql`
+
+Generate Go code:
+
+```bash
+make sqlc
+```
+
+Generated code output:
+
+- `internal/db/generated`
+
 ## Environment Variables
 
 - `APP_ENV`: environment name (default: `development`)
@@ -56,9 +96,12 @@ Expected responses:
 ```
 cmd/api/main.go               # entrypoint: config, logger, db, server
 internal/config/config.go     # config loading + validation (.env supported)
-internal/db/db.go             # database connection (sql.DB)
+internal/db/db.go             # database connection (pgxpool)
+internal/db/generated         # sqlc generated code
 internal/server/server.go     # chi router, middleware, routes
 internal/health/handler.go    # /healthz and /readyz handlers
 deploy/docker-compose.yml     # local PostgreSQL
+migrations/                   # schema migrations (golang-migrate)
+sql/queries/                  # sqlc query sources
 ```
 

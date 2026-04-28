@@ -2,14 +2,15 @@ package health
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Handler struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
 }
 
 func (h Handler) Healthz(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +25,7 @@ func (h Handler) Readyz(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
-	if err := h.DB.PingContext(ctx); err != nil {
+	if err := h.DB.Ping(ctx); err != nil {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "not_ready"})
 		return
 	}

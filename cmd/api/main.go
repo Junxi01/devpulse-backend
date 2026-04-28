@@ -32,11 +32,11 @@ func main() {
 		logger.Error("failed to connect database", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
-	defer func() { _ = database.SQL.Close() }()
+	defer database.Pool.Close()
 
 	srv, err := server.New(server.Deps{
 		Logger: logger,
-		DB:     database.SQL,
+		DB:     database.Pool,
 		Addr:   cfg.HTTPAddr,
 	})
 	if err != nil {
