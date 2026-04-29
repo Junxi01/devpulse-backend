@@ -25,7 +25,7 @@ func Load() (Config, error) {
 
 	cfg := Config{
 		AppEnv:      getenv("APP_ENV", "development"),
-		AppMode:     getenv("APP_MODE", "api"),
+		AppMode:     getenv("APP_MODE", "demo"),
 		HTTPAddr:    getenv("HTTP_ADDR", ":8080"),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		RedisAddr:   getenv("REDIS_ADDR", "localhost:6379"),
