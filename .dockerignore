@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+tmp
+bin
+dist
+*.log
+*.out
+scripts
+README.md
+docs
+api

@@ -43,6 +43,44 @@ Expected responses:
 
 - `GET /healthz` -> `{"status":"ok","service":"devpulse-api"}`
 
+## Docker Compose (API + PostgreSQL + Redis)
+
+Start all local services in one command:
+
+```bash
+docker compose up --build
+```
+
+Or via Makefile shortcut:
+
+```bash
+make docker-up
+```
+
+Services started:
+
+- `api` on `http://localhost:8080`
+- `postgres` on `localhost:5432`
+- `redis` on `localhost:6379`
+
+View logs:
+
+```bash
+make docker-logs
+```
+
+Stop and remove containers/volumes:
+
+```bash
+make docker-down
+```
+
+Verify API from host:
+
+```bash
+curl http://localhost:8080/healthz
+```
+
 ## Database Migrations
 
 Migrations live in `migrations/` and are applied in order.
@@ -106,7 +144,8 @@ internal/server/server.go     # chi router, middleware, routes
 internal/health/handler.go    # /healthz and /readyz handlers
 docs/                         # engineering docs and runbooks
 api/                          # OpenAPI / API contracts
-deploy/docker-compose.yml     # local PostgreSQL
+deploy/docker-compose.yml     # local API + PostgreSQL + Redis
+Dockerfile                    # container build for API service
 migrations/                   # schema migrations (golang-migrate)
 sql/queries/                  # sqlc query sources
 ```

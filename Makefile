@@ -1,4 +1,4 @@
-.PHONY: run dev test fmt lint-placeholder docker-up docker-down migrate-up migrate-down sqlc db-reset
+.PHONY: run dev test fmt lint-placeholder docker-up docker-down docker-logs migrate-up migrate-down sqlc db-reset
 
 # Load local env vars (DATABASE_URL, etc.) if present.
 ifneq (,$(wildcard .env))
@@ -27,10 +27,13 @@ lint-placeholder:
 	@echo "lint placeholder: add golangci-lint or staticcheck later"
 
 docker-up:
-	docker compose -f deploy/docker-compose.yml up -d
+	docker compose up -d --build
 
 docker-down:
-	docker compose -f deploy/docker-compose.yml down -v
+	docker compose down -v
+
+docker-logs:
+	docker compose logs -f --tail=200
 
 migrate-up:
 	$(MIGRATE) -path migrations -database "$(DATABASE_URL)" up
