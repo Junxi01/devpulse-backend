@@ -10,9 +10,13 @@ import (
 
 type Config struct {
 	AppEnv      string
+	AppMode     string
 	HTTPAddr    string
 	DatabaseURL string
+	RedisAddr   string
 	JWTSecret   string
+	AIProvider  string
+	GitHubMode  string
 }
 
 func Load() (Config, error) {
@@ -21,9 +25,13 @@ func Load() (Config, error) {
 
 	cfg := Config{
 		AppEnv:      getenv("APP_ENV", "development"),
+		AppMode:     getenv("APP_MODE", "api"),
 		HTTPAddr:    getenv("HTTP_ADDR", ":8080"),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
+		RedisAddr:   getenv("REDIS_ADDR", "localhost:6379"),
 		JWTSecret:   os.Getenv("JWT_SECRET"),
+		AIProvider:  getenv("AI_PROVIDER", "openai"),
+		GitHubMode:  getenv("GITHUB_MODE", "mock"),
 	}
 
 	if err := cfg.Validate(); err != nil {

@@ -1,8 +1,8 @@
 # devpulse-backend
 
-DevPulse is a developer productivity platform. This backend is responsible for receiving GitHub events, managing projects, and generating AI engineering reports.
+DevPulse is a developer productivity platform. This backend service receives GitHub events, manages project data, and provides a foundation for AI engineering reports.
 
-This repository currently provides a **Day 1 skeleton**: configuration loading, database connectivity, an HTTP server, and health/readiness endpoints for local development.
+This repository currently provides a runnable backend skeleton only (no complex business logic yet).
 
 ## Tech Stack
 
@@ -30,20 +30,18 @@ make docker-up
 Start the API:
 
 ```bash
-make dev
+make run
 ```
 
 Validate the endpoints:
 
 ```bash
 curl http://localhost:8080/healthz
-curl http://localhost:8080/readyz
 ```
 
 Expected responses:
 
-- `GET /healthz` -> `{"status":"ok"}`
-- `GET /readyz` -> `{"status":"ready"}` (returns 503 if the database is not reachable)
+- `GET /healthz` -> `{"status":"ok","service":"devpulse-api"}`
 
 ## Database Migrations
 
@@ -87,19 +85,27 @@ Generated code output:
 ## Environment Variables
 
 - `APP_ENV`: environment name (default: `development`)
+- `APP_MODE`: runtime mode (default: `api`)
 - `HTTP_ADDR`: HTTP bind address (default: `:8080`)
 - `DATABASE_URL`: PostgreSQL connection string (required)
+- `REDIS_ADDR`: Redis endpoint (default: `localhost:6379`)
 - `JWT_SECRET`: JWT signing secret (required; placeholder for Day 1)
+- `AI_PROVIDER`: AI provider name (default: `openai`)
+- `GITHUB_MODE`: GitHub integration mode (default: `mock`)
 
 ## Project Layout
 
 ```
 cmd/api/main.go               # entrypoint: config, logger, db, server
 internal/config/config.go     # config loading + validation (.env supported)
+internal/logger/              # slog logger setup
+internal/middleware/          # shared HTTP middleware (request logging, etc.)
 internal/db/db.go             # database connection (pgxpool)
 internal/db/generated         # sqlc generated code
 internal/server/server.go     # chi router, middleware, routes
 internal/health/handler.go    # /healthz and /readyz handlers
+docs/                         # engineering docs and runbooks
+api/                          # OpenAPI / API contracts
 deploy/docker-compose.yml     # local PostgreSQL
 migrations/                   # schema migrations (golang-migrate)
 sql/queries/                  # sqlc query sources

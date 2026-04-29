@@ -14,7 +14,10 @@ type Handler struct {
 }
 
 func (h Handler) Healthz(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status":  "ok",
+		"service": "devpulse-api",
+	})
 }
 
 func (h Handler) Readyz(w http.ResponseWriter, r *http.Request) {

@@ -3,17 +3,17 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"devpulse-backend/internal/health"
+	appmw "devpulse-backend/internal/middleware"
 )
 
 type Server struct {
@@ -36,11 +36,11 @@ func New(deps Deps) (*Server, error) {
 
 	r := chi.NewRouter()
 
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(NewSlogMiddleware(deps.Logger))
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(30 * time.Second))
+	r.Use(chimw.RequestID)
+	r.Use(chimw.RealIP)
+	r.Use(appmw.RequestLogger(deps.Logger))
+	r.Use(chimw.Recoverer)
+	r.Use(chimw.Timeout(30 * time.Second))
 
 	h := health.Handler{DB: deps.DB}
 	r.Get("/healthz", h.Healthz)
@@ -70,31 +70,5 @@ func (s *Server) Shutdown(ctx context.Context) error {
 		return nil
 	}
 	return s.httpServer.Shutdown(ctx)
-}
-
-func NewSlogMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			start := time.Now()
-			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
-			next.ServeHTTP(ww, r)
-
-			reqID := middleware.GetReqID(r.Context())
-			attrs := []slog.Attr{
-				slog.String("request_id", reqID),
-				slog.String("method", r.Method),
-				slog.String("path", r.URL.Path),
-				slog.Int("status", ww.Status()),
-				slog.Int("bytes", ww.BytesWritten()),
-				slog.Duration("duration", time.Since(start)),
-				slog.String("remote_ip", r.RemoteAddr),
-			}
-			if r.UserAgent() != "" {
-				attrs = append(attrs, slog.String("user_agent", r.UserAgent()))
-			}
-
-			logger.InfoContext(r.Context(), fmt.Sprintf("%s %s", r.Method, r.URL.Path), slog.Any("http", slog.GroupValue(attrs...)))
-		})
-	}
 }
 
