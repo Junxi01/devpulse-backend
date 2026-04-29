@@ -41,6 +41,9 @@ migrate-up:
 migrate-down:
 	$(MIGRATE) -path migrations -database "$(DATABASE_URL)" down 1
 
+migrate-status:
+	$(MIGRATE) -path migrations -database "$(DATABASE_URL)" version
+
 sqlc:
 	$(SQLC) generate
 

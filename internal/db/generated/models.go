@@ -30,10 +30,10 @@ type ProjectMember struct {
 }
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	Email     string    `json:"email"`
-	Name      string    `json:"name"`
-	AvatarUrl string    `json:"avatar_url"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID           uuid.UUID `json:"id"`
+	Email        string    `json:"email"`
+	Name         string    `json:"name"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	PasswordHash string    `json:"password_hash"`
 }

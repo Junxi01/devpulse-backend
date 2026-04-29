@@ -85,6 +85,11 @@ curl http://localhost:8080/healthz
 
 Migrations live in `migrations/` and are applied in order.
 
+Note on `DATABASE_URL`:
+
+- When running the API **inside Docker Compose**, use `postgres:5432` (service DNS).
+- When running `make migrate-*` **from your host machine**, use `localhost:5432` (published port).
+
 Run migrations up:
 
 ```bash
@@ -95,6 +100,12 @@ Rollback the latest migration:
 
 ```bash
 make migrate-down
+```
+
+Show current migration version:
+
+```bash
+make migrate-status
 ```
 
 Reset the database schema (dangerous, drops all migrations then re-applies):

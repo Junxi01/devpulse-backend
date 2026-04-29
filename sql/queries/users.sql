@@ -1,8 +1,8 @@
 -- name: CreateUser :one
 INSERT INTO users (
   email,
-  name,
-  avatar_url
+  password_hash,
+  name
 ) VALUES (
   $1, $2, $3
 )

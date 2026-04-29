@@ -14,36 +14,36 @@ import (
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
   email,
-  name,
-  avatar_url
+  password_hash,
+  name
 ) VALUES (
   $1, $2, $3
 )
-RETURNING id, email, name, avatar_url, created_at, updated_at
+RETURNING id, email, name, created_at, updated_at, password_hash
 `
 
 type CreateUserParams struct {
-	Email     string `json:"email"`
-	Name      string `json:"name"`
-	AvatarUrl string `json:"avatar_url"`
+	Email        string `json:"email"`
+	PasswordHash string `json:"password_hash"`
+	Name         string `json:"name"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.Name, arg.AvatarUrl)
+	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.PasswordHash, arg.Name)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.Name,
-		&i.AvatarUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PasswordHash,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, avatar_url, created_at, updated_at FROM users
+SELECT id, email, name, created_at, updated_at, password_hash FROM users
 WHERE email = $1
 LIMIT 1
 `
@@ -55,15 +55,15 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.ID,
 		&i.Email,
 		&i.Name,
-		&i.AvatarUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PasswordHash,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, name, avatar_url, created_at, updated_at FROM users
+SELECT id, email, name, created_at, updated_at, password_hash FROM users
 WHERE id = $1
 LIMIT 1
 `
@@ -75,15 +75,15 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.ID,
 		&i.Email,
 		&i.Name,
-		&i.AvatarUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PasswordHash,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, name, avatar_url, created_at, updated_at FROM users
+SELECT id, email, name, created_at, updated_at, password_hash FROM users
 ORDER BY created_at DESC
 LIMIT $1
 OFFSET $2
@@ -107,9 +107,9 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 			&i.ID,
 			&i.Email,
 			&i.Name,
-			&i.AvatarUrl,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.PasswordHash,
 		); err != nil {
 			return nil, err
 		}
