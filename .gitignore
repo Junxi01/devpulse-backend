@@ -13,9 +13,14 @@
 # IDE
 .vscode/
 .idea/
+.cursor/
 
 # OS
 .DS_Store
 
 # Logs
 *.log
+
+# Local-only project context (do not commit)
+PROJECT_CONTEXT.md
+scripts/project-context-handoff.sh
