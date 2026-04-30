@@ -127,6 +127,8 @@ Generate Go code:
 make sqlc
 ```
 
+This runs `sqlc generate` and writes code into:
+\n+- `internal/db/generated/` (generated only; do not hand-edit)\n+\n+Hand-written domain logic should live outside the generated package (e.g. `internal/repository/`), and can wrap `generated.Queries` behind small interfaces.\n+
 Generated code output:
 
 - `internal/db/generated`

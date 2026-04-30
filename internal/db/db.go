@@ -5,10 +5,13 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"devpulse-backend/internal/db/generated"
 )
 
 type DB struct {
-	Pool *pgxpool.Pool
+	Pool    *pgxpool.Pool
+	Queries *generated.Queries
 }
 
 func Open(ctx context.Context, databaseURL string) (*DB, error) {
@@ -34,6 +37,9 @@ func Open(ctx context.Context, databaseURL string) (*DB, error) {
 		return nil, err
 	}
 
-	return &DB{Pool: pool}, nil
+	return &DB{
+		Pool:    pool,
+		Queries: generated.New(pool),
+	}, nil
 }
 

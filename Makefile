@@ -1,4 +1,4 @@
-.PHONY: run dev test fmt lint-placeholder docker-up docker-down docker-logs migrate-up migrate-down sqlc db-reset
+.PHONY: run dev test fmt lint-placeholder docker-up docker-down docker-logs migrate-up migrate-down migrate-status sqlc db-reset project-context-handoff
 
 # Load local env vars (DATABASE_URL, etc.) if present.
 ifneq (,$(wildcard .env))
@@ -51,3 +51,12 @@ db-reset:
 	$(MIGRATE) -path migrations -database "$(DATABASE_URL)" down -all
 	$(MIGRATE) -path migrations -database "$(DATABASE_URL)" up
 
+# Append a dated line to PROJECT_CONTEXT.md session log (§9).
+# Usage: make project-context-handoff MSG='one-line summary, no secrets'
+project-context-handoff:
+	@if [ -z "$(MSG)" ]; then \
+		echo "usage: make project-context-handoff MSG='short summary without secrets'" >&2; \
+		exit 1; \
+	fi
+	chmod +x scripts/project-context-handoff.sh
+	./scripts/project-context-handoff.sh "$(MSG)"
