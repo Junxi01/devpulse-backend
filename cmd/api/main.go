@@ -11,8 +11,10 @@ import (
 	"time"
 
 	"devpulse-backend/internal/config"
+	"devpulse-backend/internal/auth"
 	"devpulse-backend/internal/db"
 	"devpulse-backend/internal/logger"
+	"devpulse-backend/internal/repository"
 	"devpulse-backend/internal/server"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -31,18 +33,24 @@ func main() {
 	slog.SetDefault(appLogger)
 
 	var dbPool *pgxpool.Pool
+	var usersRepo repository.UserRepository
 	database, err := db.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
 		// Allow the API to start even when DB is unavailable; /readyz will reflect readiness.
 		appLogger.Warn("database unavailable; readiness will be false until it recovers", slog.String("error", err.Error()))
 	} else {
 		dbPool = database.Pool
+		usersRepo = repository.NewUserRepository(database.Queries)
 		defer database.Pool.Close()
 	}
+
+	authSvc := auth.Service{Users: usersRepo}
+	authHandler := auth.Handler{Service: authSvc}
 
 	srv, err := server.New(server.Deps{
 		Logger: appLogger,
 		DB:     dbPool,
+		Auth:   authHandler,
 		Addr:   cfg.HTTPAddr,
 	})
 	if err != nil {

@@ -12,6 +12,7 @@ import (
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"devpulse-backend/internal/auth"
 	"devpulse-backend/internal/health"
 	appmw "devpulse-backend/internal/middleware"
 )
@@ -23,6 +24,7 @@ type Server struct {
 type Deps struct {
 	Logger *slog.Logger
 	DB     *pgxpool.Pool
+	Auth   auth.Handler
 	Addr   string
 }
 
@@ -45,6 +47,10 @@ func New(deps Deps) (*Server, error) {
 	h := health.Handler{DB: deps.DB}
 	r.Get("/healthz", h.Healthz)
 	r.Get("/readyz", h.Readyz)
+
+	r.Route("/auth", func(r chi.Router) {
+		r.Post("/register", deps.Auth.Register)
+	})
 
 	srv := &http.Server{
 		Addr:              deps.Addr,
