@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"testing"
+	"time"
 
 	"devpulse-backend/internal/db/generated"
 
@@ -75,6 +76,27 @@ func TestService_Register_HashesPassword(t *testing.T) {
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(capturedHash), []byte(pw)); err != nil {
 		t.Fatalf("hash does not match password: %v", err)
+	}
+}
+
+func TestService_Login_UnauthorizedOnBadPassword(t *testing.T) {
+	pw := "password123"
+	hash, _ := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
+
+	svc := Service{
+		Users: fakeUsersRepo{
+			getByEmail: func(context.Context, string) (generated.User, error) {
+				return generated.User{Email: "a@b.com", PasswordHash: string(hash)}, nil
+			},
+			create: func(context.Context, string, string, string) (generated.User, error) { return generated.User{}, nil },
+		},
+		JWTSecret: "secret",
+		AccessTTL: time.Hour,
+	}
+
+	_, err := svc.Login(context.Background(), "a@b.com", "wrongpass")
+	if err == nil || err != ErrUnauthorized {
+		t.Fatalf("err=%v want=%v", err, ErrUnauthorized)
 	}
 }
 

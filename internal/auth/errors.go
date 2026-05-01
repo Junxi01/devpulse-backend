@@ -9,6 +9,7 @@ var (
 	ErrInvalidEmail    = errors.New("invalid email")
 	ErrPasswordTooShort = errors.New("password too short")
 	ErrEmailTaken      = errors.New("email already exists")
+	ErrUnauthorized    = errors.New("unauthorized")
 	ErrUnavailable     = errors.New("service unavailable")
 )
 
@@ -28,6 +29,8 @@ func toAPIError(err error) APIError {
 		return APIError{Status: http.StatusBadRequest, Code: "invalid_password", Message: "password must be at least 8 characters"}
 	case errors.Is(err, ErrEmailTaken):
 		return APIError{Status: http.StatusConflict, Code: "email_taken", Message: "email already registered"}
+	case errors.Is(err, ErrUnauthorized):
+		return APIError{Status: http.StatusUnauthorized, Code: "unauthorized", Message: "unauthorized"}
 	case errors.Is(err, ErrUnavailable):
 		return APIError{Status: http.StatusServiceUnavailable, Code: "unavailable", Message: "service temporarily unavailable"}
 	default:

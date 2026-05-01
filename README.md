@@ -81,6 +81,31 @@ Verify API from host:
 curl http://localhost:8080/healthz
 ```
 
+## Auth (Register / Login / Me)
+
+Register:
+
+```bash
+curl -sS -X POST http://localhost:8080/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"me@example.com","password":"password123","name":"Me"}'
+```
+
+Login:
+
+```bash
+curl -sS -X POST http://localhost:8080/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"me@example.com","password":"password123"}'
+```
+
+Me (replace `$TOKEN` with `access_token` from login):
+
+```bash
+TOKEN="..."
+curl -sS http://localhost:8080/me -H "Authorization: Bearer $TOKEN"
+```
+
 ## Database Migrations
 
 Migrations live in `migrations/` and are applied in order.

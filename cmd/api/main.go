@@ -44,13 +44,23 @@ func main() {
 		defer database.Pool.Close()
 	}
 
-	authSvc := auth.Service{Users: usersRepo}
-	authHandler := auth.Handler{Service: authSvc}
+	authSvc := auth.Service{
+		Users:     usersRepo,
+		JWTSecret: cfg.JWTSecret,
+		AccessTTL: time.Hour,
+	}
+	authHandler := auth.Handler{
+		Registrar: authSvc,
+		LoginSvc:  authSvc,
+		MeSvc:     authSvc,
+	}
+	authMW := auth.Middleware{JWTSecret: cfg.JWTSecret}
 
 	srv, err := server.New(server.Deps{
 		Logger: appLogger,
 		DB:     dbPool,
 		Auth:   authHandler,
+		AuthMW: authMW,
 		Addr:   cfg.HTTPAddr,
 	})
 	if err != nil {

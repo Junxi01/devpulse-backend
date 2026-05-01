@@ -25,6 +25,7 @@ type Deps struct {
 	Logger *slog.Logger
 	DB     *pgxpool.Pool
 	Auth   auth.Handler
+	AuthMW auth.Middleware
 	Addr   string
 }
 
@@ -50,7 +51,10 @@ func New(deps Deps) (*Server, error) {
 
 	r.Route("/auth", func(r chi.Router) {
 		r.Post("/register", deps.Auth.Register)
+		r.Post("/login", deps.Auth.Login)
 	})
+
+	r.With(deps.AuthMW.RequireAuth).Get("/me", deps.Auth.Me)
 
 	srv := &http.Server{
 		Addr:              deps.Addr,

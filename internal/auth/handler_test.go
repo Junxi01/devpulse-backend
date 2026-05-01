@@ -19,7 +19,7 @@ func (f fakeRegistrar) Register(_ context.Context, email, password, name string)
 }
 
 func TestHandler_Register_Success(t *testing.T) {
-	h := Handler{Service: fakeRegistrar{
+	h := Handler{Registrar: fakeRegistrar{
 		fn: func(email, password, name string) (RegisteredUser, error) {
 			return RegisteredUser{ID: "u1", Email: email, Name: name}, nil
 		},
@@ -40,7 +40,7 @@ func TestHandler_Register_Success(t *testing.T) {
 }
 
 func TestHandler_Register_InvalidJSON(t *testing.T) {
-	h := Handler{Service: fakeRegistrar{fn: func(string, string, string) (RegisteredUser, error) { return RegisteredUser{}, nil }}}
+	h := Handler{Registrar: fakeRegistrar{fn: func(string, string, string) (RegisteredUser, error) { return RegisteredUser{}, nil }}}
 	req := httptest.NewRequest(http.MethodPost, "/auth/register", bytes.NewBufferString("{"))
 	w := httptest.NewRecorder()
 
@@ -57,7 +57,7 @@ func TestHandler_Register_InvalidJSON(t *testing.T) {
 }
 
 func TestHandler_Register_Conflict(t *testing.T) {
-	h := Handler{Service: fakeRegistrar{
+	h := Handler{Registrar: fakeRegistrar{
 		fn: func(email, password, name string) (RegisteredUser, error) {
 			return RegisteredUser{}, ErrEmailTaken
 		},
@@ -84,7 +84,7 @@ func TestHandler_Register_Conflict(t *testing.T) {
 }
 
 func TestHandler_Register_InternalError(t *testing.T) {
-	h := Handler{Service: fakeRegistrar{
+	h := Handler{Registrar: fakeRegistrar{
 		fn: func(email, password, name string) (RegisteredUser, error) {
 			return RegisteredUser{}, errors.New("boom")
 		},

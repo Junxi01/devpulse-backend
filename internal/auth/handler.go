@@ -4,14 +4,26 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 type Registrar interface {
 	Register(ctx context.Context, email, password, name string) (RegisteredUser, error)
 }
 
+type LoginServicer interface {
+	Login(ctx context.Context, email, password string) (LoginResponse, error)
+}
+
+type MeServicer interface {
+	Me(ctx context.Context, userID uuid.UUID) (RegisteredUser, error)
+}
+
 type Handler struct {
-	Service Registrar
+	Registrar Registrar
+	LoginSvc  LoginServicer
+	MeSvc     MeServicer
 }
 
 type registerRequest struct {
@@ -31,18 +43,59 @@ func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if h.Service == nil {
+	if h.Registrar == nil {
 		writeError(w, toAPIError(ErrUnavailable))
 		return
 	}
 
-	u, err := h.Service.Register(r.Context(), req.Email, req.Password, req.Name)
+	u, err := h.Registrar.Register(r.Context(), req.Email, req.Password, req.Name)
 	if err != nil {
 		writeError(w, toAPIError(err))
 		return
 	}
 
 	writeJSON(w, http.StatusCreated, u)
+}
+
+type loginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
+	var req loginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, APIError{Status: http.StatusBadRequest, Code: "invalid_json", Message: "invalid json body"})
+		return
+	}
+	if h.LoginSvc == nil {
+		writeError(w, toAPIError(ErrUnavailable))
+		return
+	}
+	resp, err := h.LoginSvc.Login(r.Context(), req.Email, req.Password)
+	if err != nil {
+		writeError(w, toAPIError(err))
+		return
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (h Handler) Me(w http.ResponseWriter, r *http.Request) {
+	if h.MeSvc == nil {
+		writeError(w, toAPIError(ErrUnavailable))
+		return
+	}
+	uid, ok := UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, toAPIError(ErrUnauthorized))
+		return
+	}
+	u, err := h.MeSvc.Me(r.Context(), uid)
+	if err != nil {
+		writeError(w, toAPIError(err))
+		return
+	}
+	writeJSON(w, http.StatusOK, u)
 }
 
 func writeError(w http.ResponseWriter, apiErr APIError) {
