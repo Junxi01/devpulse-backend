@@ -106,9 +106,43 @@ TOKEN="..."
 curl -sS http://localhost:8080/me -H "Authorization: Bearer $TOKEN"
 ```
 
+## Workspaces, projects, and repositories
+
+These routes require `Authorization: Bearer <token>`. JSON bodies and responses use **snake_case** field names (aligned with sqlc-generated types). Only **workspace members** may create or list projects in that workspace, or manage repositories on projects in that workspace; otherwise the API returns **403 Forbidden**. Missing or invalid JWT returns **401 Unauthorized**.
+
+Create a workspace and capture its `id` (see your client or prior workspace docs), then:
+
+```bash
+WS_ID="<workspace-uuid>"
+
+curl -sS -X POST "http://localhost:8080/workspaces/${WS_ID}/projects" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"mobile-app","description":"optional"}'
+
+curl -sS "http://localhost:8080/workspaces/${WS_ID}/projects" \
+  -H "Authorization: Bearer ${TOKEN}"
+```
+
+Link a VCS repository record to a project (for example before GitHub sync):
+
+```bash
+PROJECT_ID="<project-uuid>"
+
+curl -sS -X POST "http://localhost:8080/projects/${PROJECT_ID}/repositories" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"provider":"github","owner":"acme","name":"api","full_name":"acme/api","external_id":"123456789","default_branch":"main"}'
+
+curl -sS "http://localhost:8080/projects/${PROJECT_ID}/repositories" \
+  -H "Authorization: Bearer ${TOKEN}"
+```
+
 ## Database Migrations
 
 Migrations live in `migrations/` and are applied in order.
+
+Migration **`000004`** replaces the legacy user-scoped `projects` / `project_members` tables with **workspace-scoped** `projects` and `repositories` (see `migrations/000004_projects_repositories.up.sql`). Applying it will **drop** the old tables if they still exist.
 
 Note on `DATABASE_URL`:
 
@@ -144,7 +178,9 @@ make db-reset
 SQL query sources live in:
 
 - `sql/queries/users.sql`
+- `sql/queries/workspaces.sql`
 - `sql/queries/projects.sql`
+- `sql/queries/repositories.sql`
 
 Generate Go code:
 
@@ -152,11 +188,7 @@ Generate Go code:
 make sqlc
 ```
 
-This runs `sqlc generate` and writes code into:
-\n+- `internal/db/generated/` (generated only; do not hand-edit)\n+\n+Hand-written domain logic should live outside the generated package (e.g. `internal/repository/`), and can wrap `generated.Queries` behind small interfaces.\n+
-Generated code output:
-
-- `internal/db/generated`
+This runs `sqlc generate` into `internal/db/generated/` (generated only; do not hand-edit). Feature code wraps `generated.Queries` in packages such as `internal/repository/` (users), `internal/workspace/`, `internal/project/`, and `internal/repos/` (linked VCS repositories).
 
 ## Environment Variables
 

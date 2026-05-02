@@ -87,6 +87,25 @@ func (q *Queries) GetWorkspaceByID(ctx context.Context, arg GetWorkspaceByIDPara
 	return i, err
 }
 
+const isUserWorkspaceMember = `-- name: IsUserWorkspaceMember :one
+SELECT EXISTS (
+  SELECT 1 FROM workspace_members
+  WHERE workspace_id = $1 AND user_id = $2
+)
+`
+
+type IsUserWorkspaceMemberParams struct {
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	UserID      uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) IsUserWorkspaceMember(ctx context.Context, arg IsUserWorkspaceMemberParams) (bool, error) {
+	row := q.db.QueryRow(ctx, isUserWorkspaceMember, arg.WorkspaceID, arg.UserID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const listWorkspacesByUser = `-- name: ListWorkspacesByUser :many
 SELECT w.id, w.name, w.owner_id, w.created_at, w.updated_at
 FROM workspaces w

@@ -14,8 +14,10 @@ import (
 
 	"devpulse-backend/internal/auth"
 	"devpulse-backend/internal/health"
-	"devpulse-backend/internal/workspace"
 	appmw "devpulse-backend/internal/middleware"
+	"devpulse-backend/internal/project"
+	"devpulse-backend/internal/repos"
+	"devpulse-backend/internal/workspace"
 )
 
 type Server struct {
@@ -23,12 +25,14 @@ type Server struct {
 }
 
 type Deps struct {
-	Logger *slog.Logger
-	DB     *pgxpool.Pool
-	Auth   auth.Handler
-	AuthMW auth.Middleware
+	Logger    *slog.Logger
+	DB        *pgxpool.Pool
+	Auth      auth.Handler
+	AuthMW    auth.Middleware
 	Workspace workspace.Handler
-	Addr   string
+	Project   project.Handler
+	Repos     repos.Handler
+	Addr      string
 }
 
 func New(deps Deps) (*Server, error) {
@@ -61,7 +65,18 @@ func New(deps Deps) (*Server, error) {
 	r.With(deps.AuthMW.RequireAuth).Route("/workspaces", func(r chi.Router) {
 		r.Post("/", deps.Workspace.Create)
 		r.Get("/", deps.Workspace.List)
+		r.Route("/{workspaceID}/projects", func(r chi.Router) {
+			r.Post("/", deps.Project.CreateForWorkspace)
+			r.Get("/", deps.Project.ListForWorkspace)
+		})
 		r.Get("/{id}", deps.Workspace.Get)
+	})
+
+	r.With(deps.AuthMW.RequireAuth).Route("/projects", func(r chi.Router) {
+		r.Route("/{projectID}/repositories", func(r chi.Router) {
+			r.Post("/", deps.Repos.CreateForProject)
+			r.Get("/", deps.Repos.ListForProject)
+		})
 	})
 
 	srv := &http.Server{
@@ -89,4 +104,3 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	}
 	return s.httpServer.Shutdown(ctx)
 }
-

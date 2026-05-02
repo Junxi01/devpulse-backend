@@ -12,21 +12,24 @@ import (
 
 type Project struct {
 	ID          uuid.UUID `json:"id"`
-	OwnerID     uuid.UUID `json:"owner_id"`
+	WorkspaceID uuid.UUID `json:"workspace_id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	GithubOwner string    `json:"github_owner"`
-	GithubRepo  string    `json:"github_repo"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-type ProjectMember struct {
-	ProjectID uuid.UUID `json:"project_id"`
-	UserID    uuid.UUID `json:"user_id"`
-	Role      string    `json:"role"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+type Repository struct {
+	ID            uuid.UUID `json:"id"`
+	ProjectID     uuid.UUID `json:"project_id"`
+	Provider      string    `json:"provider"`
+	Owner         string    `json:"owner"`
+	Name          string    `json:"name"`
+	FullName      string    `json:"full_name"`
+	ExternalID    string    `json:"external_id"`
+	DefaultBranch string    `json:"default_branch"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 type User struct {

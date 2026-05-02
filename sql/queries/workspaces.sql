@@ -33,3 +33,9 @@ JOIN workspace_members wm ON wm.workspace_id = w.id
 WHERE w.id = $1 AND wm.user_id = $2
 LIMIT 1;
 
+-- name: IsUserWorkspaceMember :one
+SELECT EXISTS (
+  SELECT 1 FROM workspace_members
+  WHERE workspace_id = $1 AND user_id = $2
+);
+

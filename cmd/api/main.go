@@ -10,11 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	"devpulse-backend/internal/config"
 	"devpulse-backend/internal/auth"
+	"devpulse-backend/internal/config"
 	"devpulse-backend/internal/db"
 	"devpulse-backend/internal/db/generated"
 	"devpulse-backend/internal/logger"
+	"devpulse-backend/internal/project"
+	"devpulse-backend/internal/repos"
 	"devpulse-backend/internal/repository"
 	"devpulse-backend/internal/server"
 	"devpulse-backend/internal/workspace"
@@ -66,14 +68,22 @@ func main() {
 			Q:    queries,
 		},
 	}
+	projectHandler := project.Handler{
+		Svc: project.Service{Q: queries},
+	}
+	reposHandler := repos.Handler{
+		Svc: repos.Service{Q: queries},
+	}
 
 	srv, err := server.New(server.Deps{
-		Logger: appLogger,
-		DB:     dbPool,
-		Auth:   authHandler,
-		AuthMW: authMW,
+		Logger:    appLogger,
+		DB:        dbPool,
+		Auth:      authHandler,
+		AuthMW:    authMW,
 		Workspace: wsHandler,
-		Addr:   cfg.HTTPAddr,
+		Project:   projectHandler,
+		Repos:     reposHandler,
+		Addr:      cfg.HTTPAddr,
 	})
 	if err != nil {
 		appLogger.Error("failed to initialize http server", slog.String("error", err.Error()))
@@ -104,4 +114,3 @@ func main() {
 		appLogger.Error("http server shutdown error", slog.String("error", err.Error()))
 	}
 }
-

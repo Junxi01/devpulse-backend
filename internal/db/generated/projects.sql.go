@@ -13,95 +13,85 @@ import (
 
 const createProject = `-- name: CreateProject :one
 INSERT INTO projects (
-  owner_id,
+  workspace_id,
   name,
-  description,
-  github_owner,
-  github_repo
+  description
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3
 )
-RETURNING id, owner_id, name, description, github_owner, github_repo, created_at, updated_at
+RETURNING id, workspace_id, name, description, created_at, updated_at
 `
 
 type CreateProjectParams struct {
-	OwnerID     uuid.UUID `json:"owner_id"`
+	WorkspaceID uuid.UUID `json:"workspace_id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	GithubOwner string    `json:"github_owner"`
-	GithubRepo  string    `json:"github_repo"`
 }
 
 func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (Project, error) {
-	row := q.db.QueryRow(ctx, createProject,
-		arg.OwnerID,
-		arg.Name,
-		arg.Description,
-		arg.GithubOwner,
-		arg.GithubRepo,
-	)
+	row := q.db.QueryRow(ctx, createProject, arg.WorkspaceID, arg.Name, arg.Description)
 	var i Project
 	err := row.Scan(
 		&i.ID,
-		&i.OwnerID,
+		&i.WorkspaceID,
 		&i.Name,
 		&i.Description,
-		&i.GithubOwner,
-		&i.GithubRepo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const deleteProject = `-- name: DeleteProject :exec
-DELETE FROM projects
-WHERE id = $1
-`
-
-func (q *Queries) DeleteProject(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteProject, id)
-	return err
-}
-
-const getProjectByID = `-- name: GetProjectByID :one
-SELECT id, owner_id, name, description, github_owner, github_repo, created_at, updated_at FROM projects
-WHERE id = $1
+const getProjectForWorkspaceMember = `-- name: GetProjectForWorkspaceMember :one
+SELECT p.id, p.workspace_id, p.name, p.description, p.created_at, p.updated_at
+FROM projects p
+INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
+WHERE p.id = $1 AND wm.user_id = $2
 LIMIT 1
 `
 
-func (q *Queries) GetProjectByID(ctx context.Context, id uuid.UUID) (Project, error) {
-	row := q.db.QueryRow(ctx, getProjectByID, id)
+type GetProjectForWorkspaceMemberParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) GetProjectForWorkspaceMember(ctx context.Context, arg GetProjectForWorkspaceMemberParams) (Project, error) {
+	row := q.db.QueryRow(ctx, getProjectForWorkspaceMember, arg.ID, arg.UserID)
 	var i Project
 	err := row.Scan(
 		&i.ID,
-		&i.OwnerID,
+		&i.WorkspaceID,
 		&i.Name,
 		&i.Description,
-		&i.GithubOwner,
-		&i.GithubRepo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const listProjectsByOwner = `-- name: ListProjectsByOwner :many
-SELECT id, owner_id, name, description, github_owner, github_repo, created_at, updated_at FROM projects
-WHERE owner_id = $1
-ORDER BY created_at DESC
-LIMIT $2
-OFFSET $3
+const listProjectsForWorkspaceMember = `-- name: ListProjectsForWorkspaceMember :many
+SELECT p.id, p.workspace_id, p.name, p.description, p.created_at, p.updated_at
+FROM projects p
+INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
+WHERE p.workspace_id = $1 AND wm.user_id = $2
+ORDER BY p.created_at DESC
+LIMIT $3 OFFSET $4
 `
 
-type ListProjectsByOwnerParams struct {
-	OwnerID uuid.UUID `json:"owner_id"`
-	Limit   int32     `json:"limit"`
-	Offset  int32     `json:"offset"`
+type ListProjectsForWorkspaceMemberParams struct {
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	UserID      uuid.UUID `json:"user_id"`
+	Limit       int32     `json:"limit"`
+	Offset      int32     `json:"offset"`
 }
 
-func (q *Queries) ListProjectsByOwner(ctx context.Context, arg ListProjectsByOwnerParams) ([]Project, error) {
-	rows, err := q.db.Query(ctx, listProjectsByOwner, arg.OwnerID, arg.Limit, arg.Offset)
+func (q *Queries) ListProjectsForWorkspaceMember(ctx context.Context, arg ListProjectsForWorkspaceMemberParams) ([]Project, error) {
+	rows, err := q.db.Query(ctx, listProjectsForWorkspaceMember,
+		arg.WorkspaceID,
+		arg.UserID,
+		arg.Limit,
+		arg.Offset,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -111,11 +101,9 @@ func (q *Queries) ListProjectsByOwner(ctx context.Context, arg ListProjectsByOwn
 		var i Project
 		if err := rows.Scan(
 			&i.ID,
-			&i.OwnerID,
+			&i.WorkspaceID,
 			&i.Name,
 			&i.Description,
-			&i.GithubOwner,
-			&i.GithubRepo,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -127,46 +115,4 @@ func (q *Queries) ListProjectsByOwner(ctx context.Context, arg ListProjectsByOwn
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateProject = `-- name: UpdateProject :one
-UPDATE projects
-SET
-  name = $2,
-  description = $3,
-  github_owner = $4,
-  github_repo = $5,
-  updated_at = now()
-WHERE id = $1
-RETURNING id, owner_id, name, description, github_owner, github_repo, created_at, updated_at
-`
-
-type UpdateProjectParams struct {
-	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	GithubOwner string    `json:"github_owner"`
-	GithubRepo  string    `json:"github_repo"`
-}
-
-func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (Project, error) {
-	row := q.db.QueryRow(ctx, updateProject,
-		arg.ID,
-		arg.Name,
-		arg.Description,
-		arg.GithubOwner,
-		arg.GithubRepo,
-	)
-	var i Project
-	err := row.Scan(
-		&i.ID,
-		&i.OwnerID,
-		&i.Name,
-		&i.Description,
-		&i.GithubOwner,
-		&i.GithubRepo,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

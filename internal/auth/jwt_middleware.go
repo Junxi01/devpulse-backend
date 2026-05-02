@@ -35,6 +35,11 @@ func UserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 	return uid, ok
 }
 
+// ContextWithUserID attaches user_id as RequireAuth middleware would. Intended for tests and internal tooling.
+func ContextWithUserID(ctx context.Context, uid uuid.UUID) context.Context {
+	return context.WithValue(ctx, userIDKey, uid)
+}
+
 func (m Middleware) authenticate(r *http.Request) (uuid.UUID, bool) {
 	if m.JWTSecret == "" {
 		return uuid.UUID{}, false
@@ -76,4 +81,3 @@ func (m Middleware) authenticate(r *http.Request) (uuid.UUID, bool) {
 	}
 	return uid, true
 }
-
