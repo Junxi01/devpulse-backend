@@ -37,3 +37,18 @@ type User struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 	PasswordHash string    `json:"password_hash"`
 }
+
+type Workspace struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	OwnerID   uuid.UUID `json:"owner_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type WorkspaceMember struct {
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	UserID      uuid.UUID `json:"user_id"`
+	Role        string    `json:"role"`
+	CreatedAt   time.Time `json:"created_at"`
+}

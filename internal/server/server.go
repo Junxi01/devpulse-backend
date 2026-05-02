@@ -14,6 +14,7 @@ import (
 
 	"devpulse-backend/internal/auth"
 	"devpulse-backend/internal/health"
+	"devpulse-backend/internal/workspace"
 	appmw "devpulse-backend/internal/middleware"
 )
 
@@ -26,6 +27,7 @@ type Deps struct {
 	DB     *pgxpool.Pool
 	Auth   auth.Handler
 	AuthMW auth.Middleware
+	Workspace workspace.Handler
 	Addr   string
 }
 
@@ -55,6 +57,12 @@ func New(deps Deps) (*Server, error) {
 	})
 
 	r.With(deps.AuthMW.RequireAuth).Get("/me", deps.Auth.Me)
+
+	r.With(deps.AuthMW.RequireAuth).Route("/workspaces", func(r chi.Router) {
+		r.Post("/", deps.Workspace.Create)
+		r.Get("/", deps.Workspace.List)
+		r.Get("/{id}", deps.Workspace.Get)
+	})
 
 	srv := &http.Server{
 		Addr:              deps.Addr,

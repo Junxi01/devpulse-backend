@@ -13,9 +13,11 @@ import (
 	"devpulse-backend/internal/config"
 	"devpulse-backend/internal/auth"
 	"devpulse-backend/internal/db"
+	"devpulse-backend/internal/db/generated"
 	"devpulse-backend/internal/logger"
 	"devpulse-backend/internal/repository"
 	"devpulse-backend/internal/server"
+	"devpulse-backend/internal/workspace"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -34,6 +36,7 @@ func main() {
 
 	var dbPool *pgxpool.Pool
 	var usersRepo repository.UserRepository
+	var queries *generated.Queries
 	database, err := db.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
 		// Allow the API to start even when DB is unavailable; /readyz will reflect readiness.
@@ -41,6 +44,7 @@ func main() {
 	} else {
 		dbPool = database.Pool
 		usersRepo = repository.NewUserRepository(database.Queries)
+		queries = database.Queries
 		defer database.Pool.Close()
 	}
 
@@ -56,11 +60,19 @@ func main() {
 	}
 	authMW := auth.Middleware{JWTSecret: cfg.JWTSecret}
 
+	wsHandler := workspace.Handler{
+		Svc: workspace.Service{
+			Pool: dbPool,
+			Q:    queries,
+		},
+	}
+
 	srv, err := server.New(server.Deps{
 		Logger: appLogger,
 		DB:     dbPool,
 		Auth:   authHandler,
 		AuthMW: authMW,
+		Workspace: wsHandler,
 		Addr:   cfg.HTTPAddr,
 	})
 	if err != nil {
