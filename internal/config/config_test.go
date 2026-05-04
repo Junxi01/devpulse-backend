@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -35,3 +36,31 @@ func TestLoad_Defaults(t *testing.T) {
 	}
 }
 
+func TestLoad_AppModeDemoCaseInsensitive(t *testing.T) {
+	t.Setenv("APP_MODE", "DEMO")
+	t.Setenv("DATABASE_URL", "postgres://x:x@localhost:5432/x?sslmode=disable")
+	t.Setenv("JWT_SECRET", "test-secret")
+	t.Setenv("HTTP_ADDR", "")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.AppMode != "demo" {
+		t.Fatalf("AppMode = %q, want demo", cfg.AppMode)
+	}
+}
+
+func TestLoad_InvalidAppMode(t *testing.T) {
+	t.Setenv("APP_MODE", "staging")
+	t.Setenv("DATABASE_URL", "postgres://x:x@localhost:5432/x?sslmode=disable")
+	t.Setenv("JWT_SECRET", "test-secret")
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for invalid APP_MODE")
+	}
+	if !strings.Contains(err.Error(), "APP_MODE") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

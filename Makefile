@@ -1,4 +1,4 @@
-.PHONY: run dev test fmt lint-placeholder docker-up docker-down docker-logs migrate-up migrate-down migrate-status sqlc db-reset project-context-handoff
+.PHONY: run dev test fmt lint-placeholder docker-up docker-down docker-logs migrate-up migrate-down migrate-status sqlc db-reset seed-demo project-context-handoff
 
 # Load local env vars (DATABASE_URL, etc.) if present.
 ifneq (,$(wildcard .env))
@@ -50,6 +50,10 @@ sqlc:
 db-reset:
 	$(MIGRATE) -path migrations -database "$(DATABASE_URL)" down -all
 	$(MIGRATE) -path migrations -database "$(DATABASE_URL)" up
+
+# Idempotent local demo user + workspace + project + repository (APP_MODE=demo, or set SEED_DEMO=1).
+seed-demo:
+	go run ./cmd/seed
 
 # Append a dated line to PROJECT_CONTEXT.md session log (§9).
 # Usage: make project-context-handoff MSG='one-line summary, no secrets'

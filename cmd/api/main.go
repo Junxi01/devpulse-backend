@@ -92,7 +92,7 @@ func main() {
 
 	errCh := make(chan error, 1)
 	go func() {
-		appLogger.Info("http server starting", slog.String("addr", cfg.HTTPAddr), slog.String("env", cfg.AppEnv), slog.String("mode", cfg.AppMode))
+		appLogger.Info("http server starting", slog.String("addr", cfg.HTTPAddr), slog.String("env", cfg.AppEnv), slog.String("app_mode", cfg.AppMode))
 		errCh <- srv.ListenAndServe()
 	}()
 

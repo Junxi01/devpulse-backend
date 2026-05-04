@@ -106,6 +106,29 @@ TOKEN="..."
 curl -sS http://localhost:8080/me -H "Authorization: Bearer $TOKEN"
 ```
 
+## Demo Mode (local)
+
+- **`APP_MODE`**: `demo` (default) for local development, or `live` for a production-like setting. The API does **not** embed demo accounts in request handlers; demo data is loaded only when you run the seed command.
+- **Seed** (idempotent: safe to run multiple times) after PostgreSQL is up and migrations are applied:
+
+```bash
+make migrate-up
+make seed-demo
+```
+
+`make seed-demo` runs `go run ./cmd/seed`, which stores the demo password with **bcrypt** (same cost as user registration). It refuses to run when `APP_MODE=live` unless you set **`SEED_DEMO=1`** for a deliberate one-off load.
+
+**Demo login** (local only; never use these credentials outside local/dev):
+
+| Field | Value |
+|-------|-------|
+| Email | `demo@devpulse.local` |
+| Password | `demo123456` |
+
+After seeding, log in with the same **`POST /auth/login`** request as above using those credentials. The seed also creates a demo workspace (**Demo Workspace**), project (**Demo Project**), and repository metadata (**github** / `devpulse/demo-backend`, external id `1001`).
+
+See also `seed/demo_data.sql` (documentation pointer only).
+
 ## Workspaces, projects, and repositories
 
 These routes require `Authorization: Bearer <token>`. JSON bodies and responses use **snake_case** field names (aligned with sqlc-generated types). Only **workspace members** may create or list projects in that workspace, or manage repositories on projects in that workspace; otherwise the API returns **403 Forbidden**. Missing or invalid JWT returns **401 Unauthorized**.
@@ -193,7 +216,7 @@ This runs `sqlc generate` into `internal/db/generated/` (generated only; do not 
 ## Environment Variables
 
 - `APP_ENV`: environment name (default: `development`)
-- `APP_MODE`: runtime mode (default: `api`)
+- `APP_MODE`: `demo` (default) or `live` — used for local demo/seeding policy; the HTTP server does not switch API behavior on this value yet, but `make seed-demo` requires `demo` unless `SEED_DEMO=1`
 - `HTTP_ADDR`: HTTP bind address (default: `:8080`)
 - `DATABASE_URL`: PostgreSQL connection string (required)
 - `REDIS_ADDR`: Redis endpoint (default: `localhost:6379`)
@@ -205,6 +228,7 @@ This runs `sqlc generate` into `internal/db/generated/` (generated only; do not 
 
 ```
 cmd/api/main.go               # entrypoint: config, logger, db, server
+cmd/seed/main.go              # optional: idempotent local demo data (see make seed-demo)
 internal/config/config.go     # config loading + validation (.env supported)
 internal/logger/              # slog logger setup
 internal/middleware/          # shared HTTP middleware (request logging, etc.)

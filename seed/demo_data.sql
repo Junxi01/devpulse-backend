@@ -1,0 +1,6 @@
+-- Demo seed data is applied by the Go seed command (bcrypt-hashed passwords).
+-- Run from the repo root after migrations:
+--
+--   make seed-demo
+--
+-- Do not paste plaintext passwords into SQL migrations or production paths.

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -25,7 +26,7 @@ func Load() (Config, error) {
 
 	cfg := Config{
 		AppEnv:      getenv("APP_ENV", "development"),
-		AppMode:     getenv("APP_MODE", "demo"),
+		AppMode:     normalizeAppMode(getenv("APP_MODE", "demo")),
 		HTTPAddr:    getenv("HTTP_ADDR", ":8080"),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		RedisAddr:   getenv("REDIS_ADDR", "localhost:6379"),
@@ -42,6 +43,9 @@ func Load() (Config, error) {
 
 func (c Config) Validate() error {
 	var errs []error
+	if c.AppMode != "demo" && c.AppMode != "live" {
+		errs = append(errs, fmt.Errorf("APP_MODE must be %q or %q, got %q", "demo", "live", c.AppMode))
+	}
 	if c.HTTPAddr == "" {
 		errs = append(errs, errors.New("HTTP_ADDR is required"))
 	}
@@ -52,6 +56,14 @@ func (c Config) Validate() error {
 		errs = append(errs, errors.New("JWT_SECRET is required"))
 	}
 	return joinErrors(errs)
+}
+
+func normalizeAppMode(v string) string {
+	s := strings.TrimSpace(strings.ToLower(v))
+	if s == "" {
+		return "demo"
+	}
+	return s
 }
 
 func getenv(key, def string) string {
@@ -75,4 +87,3 @@ func joinErrors(errs []error) error {
 	}
 	return fmt.Errorf("%s", msg)
 }
-
