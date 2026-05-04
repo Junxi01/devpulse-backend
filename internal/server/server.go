@@ -79,6 +79,14 @@ func New(deps Deps) (*Server, error) {
 		})
 	})
 
+	r.With(deps.AuthMW.RequireAuth).Route("/repositories", func(r chi.Router) {
+		r.Route("/{repoID}", func(r chi.Router) {
+			r.Get("/events", deps.Repos.ListRepositoryEvents)
+			r.Get("/pull-requests", deps.Repos.ListRepositoryPullRequests)
+			r.Get("/issues", deps.Repos.ListRepositoryIssues)
+		})
+	})
+
 	srv := &http.Server{
 		Addr:              deps.Addr,
 		Handler:           r,

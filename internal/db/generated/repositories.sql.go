@@ -62,6 +62,38 @@ func (q *Queries) CreateRepository(ctx context.Context, arg CreateRepositoryPara
 	return i, err
 }
 
+const getRepositoryForWorkspaceMember = `-- name: GetRepositoryForWorkspaceMember :one
+SELECT r.id, r.project_id, r.provider, r.owner, r.name, r.full_name, r.external_id, r.default_branch, r.created_at, r.updated_at
+FROM repositories r
+INNER JOIN projects p ON p.id = r.project_id
+INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
+WHERE r.id = $1 AND wm.user_id = $2
+LIMIT 1
+`
+
+type GetRepositoryForWorkspaceMemberParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) GetRepositoryForWorkspaceMember(ctx context.Context, arg GetRepositoryForWorkspaceMemberParams) (Repository, error) {
+	row := q.db.QueryRow(ctx, getRepositoryForWorkspaceMember, arg.ID, arg.UserID)
+	var i Repository
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.Provider,
+		&i.Owner,
+		&i.Name,
+		&i.FullName,
+		&i.ExternalID,
+		&i.DefaultBranch,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listRepositoriesForWorkspaceMember = `-- name: ListRepositoriesForWorkspaceMember :many
 SELECT r.id, r.project_id, r.provider, r.owner, r.name, r.full_name, r.external_id, r.default_branch, r.created_at, r.updated_at
 FROM repositories r

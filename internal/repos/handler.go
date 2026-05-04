@@ -16,6 +16,9 @@ import (
 type SvcAPI interface {
 	CreateForProject(ctx context.Context, userID, projectID uuid.UUID, provider, owner, name, fullName, externalID, defaultBranch string) (generated.Repository, error)
 	ListForProject(ctx context.Context, userID, projectID uuid.UUID, limit, offset int32) ([]generated.Repository, error)
+	ListEventsForRepository(ctx context.Context, userID, repositoryID uuid.UUID, limit, offset int32) ([]generated.RepositoryEvent, error)
+	ListPullRequestsForRepository(ctx context.Context, userID, repositoryID uuid.UUID, limit, offset int32) ([]generated.PullRequest, error)
+	ListIssuesForRepository(ctx context.Context, userID, repositoryID uuid.UUID, limit, offset int32) ([]generated.Issue, error)
 }
 
 type Handler struct {

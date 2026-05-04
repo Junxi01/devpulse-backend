@@ -20,3 +20,11 @@ INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
 WHERE r.project_id = $1 AND wm.user_id = $2
 ORDER BY r.created_at DESC
 LIMIT $3 OFFSET $4;
+
+-- name: GetRepositoryForWorkspaceMember :one
+SELECT r.*
+FROM repositories r
+INNER JOIN projects p ON p.id = r.project_id
+INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
+WHERE r.id = $1 AND wm.user_id = $2
+LIMIT 1;

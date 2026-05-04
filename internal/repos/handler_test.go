@@ -30,6 +30,18 @@ func (forbiddenReposSvc) ListForProject(ctx context.Context, userID, projectID u
 	return nil, ErrForbidden
 }
 
+func (forbiddenReposSvc) ListEventsForRepository(ctx context.Context, userID, repositoryID uuid.UUID, limit, offset int32) ([]generated.RepositoryEvent, error) {
+	return nil, ErrForbidden
+}
+
+func (forbiddenReposSvc) ListPullRequestsForRepository(ctx context.Context, userID, repositoryID uuid.UUID, limit, offset int32) ([]generated.PullRequest, error) {
+	return nil, ErrForbidden
+}
+
+func (forbiddenReposSvc) ListIssuesForRepository(ctx context.Context, userID, repositoryID uuid.UUID, limit, offset int32) ([]generated.Issue, error) {
+	return nil, ErrForbidden
+}
+
 func TestHandler_CreateForProject_UnauthorizedWithoutContextUser(t *testing.T) {
 	h := Handler{}
 	body := `{"provider":"github","owner":"a","name":"b","full_name":"a/b","external_id":"1"}`
@@ -77,6 +89,81 @@ func TestHandler_ListForProject_Forbidden(t *testing.T) {
 	req = req.WithContext(auth.ContextWithUserID(req.Context(), uid))
 	w := httptest.NewRecorder()
 	h.ListForProject(w, req)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestHandler_ListRepositoryEvents_UnauthorizedWithoutContextUser(t *testing.T) {
+	h := Handler{}
+	rid := uuid.New()
+	req := httptest.NewRequest(http.MethodGet, "/repositories/"+rid.String()+"/events", nil)
+	w := httptest.NewRecorder()
+	h.ListRepositoryEvents(w, req)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestHandler_ListRepositoryEvents_Forbidden(t *testing.T) {
+	h := Handler{Svc: forbiddenReposSvc{}}
+	uid := uuid.New()
+	rid := uuid.New()
+	req := httptest.NewRequest(http.MethodGet, "/repositories/"+rid.String()+"/events", nil)
+	req = reqWithChiParam(req, "repoID", rid.String())
+	req = req.WithContext(auth.ContextWithUserID(req.Context(), uid))
+	w := httptest.NewRecorder()
+	h.ListRepositoryEvents(w, req)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestHandler_ListRepositoryPullRequests_UnauthorizedWithoutContextUser(t *testing.T) {
+	h := Handler{}
+	rid := uuid.New()
+	req := httptest.NewRequest(http.MethodGet, "/repositories/"+rid.String()+"/pull-requests", nil)
+	w := httptest.NewRecorder()
+	h.ListRepositoryPullRequests(w, req)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestHandler_ListRepositoryPullRequests_Forbidden(t *testing.T) {
+	h := Handler{Svc: forbiddenReposSvc{}}
+	uid := uuid.New()
+	rid := uuid.New()
+	req := httptest.NewRequest(http.MethodGet, "/repositories/"+rid.String()+"/pull-requests", nil)
+	req = reqWithChiParam(req, "repoID", rid.String())
+	req = req.WithContext(auth.ContextWithUserID(req.Context(), uid))
+	w := httptest.NewRecorder()
+	h.ListRepositoryPullRequests(w, req)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestHandler_ListRepositoryIssues_UnauthorizedWithoutContextUser(t *testing.T) {
+	h := Handler{}
+	rid := uuid.New()
+	req := httptest.NewRequest(http.MethodGet, "/repositories/"+rid.String()+"/issues", nil)
+	w := httptest.NewRecorder()
+	h.ListRepositoryIssues(w, req)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestHandler_ListRepositoryIssues_Forbidden(t *testing.T) {
+	h := Handler{Svc: forbiddenReposSvc{}}
+	uid := uuid.New()
+	rid := uuid.New()
+	req := httptest.NewRequest(http.MethodGet, "/repositories/"+rid.String()+"/issues", nil)
+	req = reqWithChiParam(req, "repoID", rid.String())
+	req = req.WithContext(auth.ContextWithUserID(req.Context(), uid))
+	w := httptest.NewRecorder()
+	h.ListRepositoryIssues(w, req)
 	if w.Code != http.StatusForbidden {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 	}

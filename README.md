@@ -161,11 +161,32 @@ curl -sS "http://localhost:8080/projects/${PROJECT_ID}/repositories" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
+## GitHub activity (read model)
+
+For each linked **repository** `id` (from `GET /projects/{projectID}/repositories`), workspace members can read ingested activity (webhook/sync data is stored in PostgreSQL; empty lists are normal until a sync job populates rows):
+
+```bash
+REPO_ID="<repository-uuid>"
+
+curl -sS "http://localhost:8080/repositories/${REPO_ID}/events" \
+  -H "Authorization: Bearer ${TOKEN}"
+
+curl -sS "http://localhost:8080/repositories/${REPO_ID}/pull-requests" \
+  -H "Authorization: Bearer ${TOKEN}"
+
+curl -sS "http://localhost:8080/repositories/${REPO_ID}/issues" \
+  -H "Authorization: Bearer ${TOKEN}"
+```
+
+Optional query params: `limit`, `offset` (same defaults as other list endpoints).
+
 ## Database Migrations
 
 Migrations live in `migrations/` and are applied in order.
 
 Migration **`000004`** replaces the legacy user-scoped `projects` / `project_members` tables with **workspace-scoped** `projects` and `repositories` (see `migrations/000004_projects_repositories.up.sql`). Applying it will **drop** the old tables if they still exist.
+
+Migration **`000005`** adds **`repository_events`**, **`pull_requests`**, **`issues`**, and **`commits`** keyed by `repositories.id` (FK `ON DELETE CASCADE`). Inserts are intended for sync/webhook ingestion; listing APIs cover events, PRs, and issues first.
 
 Note on `DATABASE_URL`:
 
@@ -204,6 +225,7 @@ SQL query sources live in:
 - `sql/queries/workspaces.sql`
 - `sql/queries/projects.sql`
 - `sql/queries/repositories.sql`
+- `sql/queries/github_activity.sql`
 
 Generate Go code:
 

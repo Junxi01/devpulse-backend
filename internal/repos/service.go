@@ -101,6 +101,71 @@ func (s Service) ListForProject(ctx context.Context, userID, projectID uuid.UUID
 	})
 }
 
+func (s Service) ensureRepositoryAccess(ctx context.Context, userID, repositoryID uuid.UUID) error {
+	if userID == uuid.Nil {
+		return ErrUnauthenticated
+	}
+	if s.Q == nil {
+		return errors.New("service unavailable")
+	}
+	_, err := s.Q.GetRepositoryForWorkspaceMember(ctx, generated.GetRepositoryForWorkspaceMemberParams{
+		ID:     repositoryID,
+		UserID: userID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrForbidden
+		}
+		return err
+	}
+	return nil
+}
+
+func (s Service) ListEventsForRepository(ctx context.Context, userID, repositoryID uuid.UUID, limit, offset int32) ([]generated.RepositoryEvent, error) {
+	if err := s.ensureRepositoryAccess(ctx, userID, repositoryID); err != nil {
+		return nil, err
+	}
+	if limit <= 0 {
+		limit = 50
+	}
+	return s.Q.ListRepositoryEventsForMember(ctx, generated.ListRepositoryEventsForMemberParams{
+		RepositoryID: repositoryID,
+		UserID:       userID,
+		Limit:        limit,
+		Offset:       offset,
+	})
+}
+
+func (s Service) ListPullRequestsForRepository(ctx context.Context, userID, repositoryID uuid.UUID, limit, offset int32) ([]generated.PullRequest, error) {
+	if err := s.ensureRepositoryAccess(ctx, userID, repositoryID); err != nil {
+		return nil, err
+	}
+	if limit <= 0 {
+		limit = 50
+	}
+	return s.Q.ListPullRequestsForMember(ctx, generated.ListPullRequestsForMemberParams{
+		RepositoryID: repositoryID,
+		UserID:       userID,
+		Limit:        limit,
+		Offset:       offset,
+	})
+}
+
+func (s Service) ListIssuesForRepository(ctx context.Context, userID, repositoryID uuid.UUID, limit, offset int32) ([]generated.Issue, error) {
+	if err := s.ensureRepositoryAccess(ctx, userID, repositoryID); err != nil {
+		return nil, err
+	}
+	if limit <= 0 {
+		limit = 50
+	}
+	return s.Q.ListIssuesForMember(ctx, generated.ListIssuesForMemberParams{
+		RepositoryID: repositoryID,
+		UserID:       userID,
+		Limit:        limit,
+		Offset:       offset,
+	})
+}
+
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"

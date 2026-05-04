@@ -5,10 +5,36 @@
 package generated
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type Commit struct {
+	ID           uuid.UUID `json:"id"`
+	RepositoryID uuid.UUID `json:"repository_id"`
+	Sha          string    `json:"sha"`
+	Message      string    `json:"message"`
+	Author       string    `json:"author"`
+	CommittedAt  time.Time `json:"committed_at"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+type Issue struct {
+	ID           uuid.UUID       `json:"id"`
+	RepositoryID uuid.UUID       `json:"repository_id"`
+	Number       int32           `json:"number"`
+	Title        string          `json:"title"`
+	State        string          `json:"state"`
+	Author       string          `json:"author"`
+	Labels       json.RawMessage `json:"labels"`
+	Priority     pgtype.Text     `json:"priority"`
+	Category     pgtype.Text     `json:"category"`
+	CreatedAt    time.Time       `json:"created_at"`
+	UpdatedAt    time.Time       `json:"updated_at"`
+}
 
 type Project struct {
 	ID          uuid.UUID `json:"id"`
@@ -17,6 +43,23 @@ type Project struct {
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type PullRequest struct {
+	ID           uuid.UUID   `json:"id"`
+	RepositoryID uuid.UUID   `json:"repository_id"`
+	Number       int32       `json:"number"`
+	Title        string      `json:"title"`
+	State        string      `json:"state"`
+	Author       string      `json:"author"`
+	BaseBranch   string      `json:"base_branch"`
+	HeadBranch   string      `json:"head_branch"`
+	ChangedFiles int32       `json:"changed_files"`
+	Additions    int32       `json:"additions"`
+	Deletions    int32       `json:"deletions"`
+	RiskLevel    pgtype.Text `json:"risk_level"`
+	CreatedAt    time.Time   `json:"created_at"`
+	UpdatedAt    time.Time   `json:"updated_at"`
 }
 
 type Repository struct {
@@ -30,6 +73,16 @@ type Repository struct {
 	DefaultBranch string    `json:"default_branch"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+type RepositoryEvent struct {
+	ID           uuid.UUID       `json:"id"`
+	RepositoryID uuid.UUID       `json:"repository_id"`
+	EventType    string          `json:"event_type"`
+	ExternalID   string          `json:"external_id"`
+	Payload      json.RawMessage `json:"payload"`
+	OccurredAt   time.Time       `json:"occurred_at"`
+	CreatedAt    time.Time       `json:"created_at"`
 }
 
 type User struct {
