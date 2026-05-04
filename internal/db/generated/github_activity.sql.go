@@ -454,6 +454,218 @@ func (q *Queries) GetRepositoryEventForMember(ctx context.Context, arg GetReposi
 	return i, err
 }
 
+const insertCommitIdempotent = `-- name: InsertCommitIdempotent :one
+INSERT INTO commits (
+  repository_id,
+  sha,
+  message,
+  author,
+  committed_at
+) VALUES (
+  $1, $2, $3, $4, $5
+)
+ON CONFLICT (repository_id, sha) DO NOTHING
+RETURNING id, repository_id, sha, message, author, committed_at, created_at
+`
+
+type InsertCommitIdempotentParams struct {
+	RepositoryID uuid.UUID `json:"repository_id"`
+	Sha          string    `json:"sha"`
+	Message      string    `json:"message"`
+	Author       string    `json:"author"`
+	CommittedAt  time.Time `json:"committed_at"`
+}
+
+func (q *Queries) InsertCommitIdempotent(ctx context.Context, arg InsertCommitIdempotentParams) (Commit, error) {
+	row := q.db.QueryRow(ctx, insertCommitIdempotent,
+		arg.RepositoryID,
+		arg.Sha,
+		arg.Message,
+		arg.Author,
+		arg.CommittedAt,
+	)
+	var i Commit
+	err := row.Scan(
+		&i.ID,
+		&i.RepositoryID,
+		&i.Sha,
+		&i.Message,
+		&i.Author,
+		&i.CommittedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const insertIssueIdempotent = `-- name: InsertIssueIdempotent :one
+INSERT INTO issues (
+  repository_id,
+  number,
+  title,
+  state,
+  author,
+  labels,
+  priority,
+  category
+) VALUES (
+  $1, $2, $3, $4, $5, $6, $7, $8
+)
+ON CONFLICT (repository_id, number) DO NOTHING
+RETURNING id, repository_id, number, title, state, author, labels, priority, category, created_at, updated_at
+`
+
+type InsertIssueIdempotentParams struct {
+	RepositoryID uuid.UUID       `json:"repository_id"`
+	Number       int32           `json:"number"`
+	Title        string          `json:"title"`
+	State        string          `json:"state"`
+	Author       string          `json:"author"`
+	Labels       json.RawMessage `json:"labels"`
+	Priority     pgtype.Text     `json:"priority"`
+	Category     pgtype.Text     `json:"category"`
+}
+
+func (q *Queries) InsertIssueIdempotent(ctx context.Context, arg InsertIssueIdempotentParams) (Issue, error) {
+	row := q.db.QueryRow(ctx, insertIssueIdempotent,
+		arg.RepositoryID,
+		arg.Number,
+		arg.Title,
+		arg.State,
+		arg.Author,
+		arg.Labels,
+		arg.Priority,
+		arg.Category,
+	)
+	var i Issue
+	err := row.Scan(
+		&i.ID,
+		&i.RepositoryID,
+		&i.Number,
+		&i.Title,
+		&i.State,
+		&i.Author,
+		&i.Labels,
+		&i.Priority,
+		&i.Category,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const insertPullRequestIdempotent = `-- name: InsertPullRequestIdempotent :one
+INSERT INTO pull_requests (
+  repository_id,
+  number,
+  title,
+  state,
+  author,
+  base_branch,
+  head_branch,
+  changed_files,
+  additions,
+  deletions,
+  risk_level
+) VALUES (
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+)
+ON CONFLICT (repository_id, number) DO NOTHING
+RETURNING id, repository_id, number, title, state, author, base_branch, head_branch, changed_files, additions, deletions, risk_level, created_at, updated_at
+`
+
+type InsertPullRequestIdempotentParams struct {
+	RepositoryID uuid.UUID   `json:"repository_id"`
+	Number       int32       `json:"number"`
+	Title        string      `json:"title"`
+	State        string      `json:"state"`
+	Author       string      `json:"author"`
+	BaseBranch   string      `json:"base_branch"`
+	HeadBranch   string      `json:"head_branch"`
+	ChangedFiles int32       `json:"changed_files"`
+	Additions    int32       `json:"additions"`
+	Deletions    int32       `json:"deletions"`
+	RiskLevel    pgtype.Text `json:"risk_level"`
+}
+
+func (q *Queries) InsertPullRequestIdempotent(ctx context.Context, arg InsertPullRequestIdempotentParams) (PullRequest, error) {
+	row := q.db.QueryRow(ctx, insertPullRequestIdempotent,
+		arg.RepositoryID,
+		arg.Number,
+		arg.Title,
+		arg.State,
+		arg.Author,
+		arg.BaseBranch,
+		arg.HeadBranch,
+		arg.ChangedFiles,
+		arg.Additions,
+		arg.Deletions,
+		arg.RiskLevel,
+	)
+	var i PullRequest
+	err := row.Scan(
+		&i.ID,
+		&i.RepositoryID,
+		&i.Number,
+		&i.Title,
+		&i.State,
+		&i.Author,
+		&i.BaseBranch,
+		&i.HeadBranch,
+		&i.ChangedFiles,
+		&i.Additions,
+		&i.Deletions,
+		&i.RiskLevel,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const insertRepositoryEventIdempotent = `-- name: InsertRepositoryEventIdempotent :one
+
+INSERT INTO repository_events (
+  repository_id,
+  event_type,
+  external_id,
+  payload,
+  occurred_at
+) VALUES (
+  $1, $2, $3, $4, $5
+)
+ON CONFLICT (repository_id, external_id) DO NOTHING
+RETURNING id, repository_id, event_type, external_id, payload, occurred_at, created_at
+`
+
+type InsertRepositoryEventIdempotentParams struct {
+	RepositoryID uuid.UUID       `json:"repository_id"`
+	EventType    string          `json:"event_type"`
+	ExternalID   string          `json:"external_id"`
+	Payload      json.RawMessage `json:"payload"`
+	OccurredAt   time.Time       `json:"occurred_at"`
+}
+
+// Idempotent inserts (no row returned when skipped due to unique constraint)
+func (q *Queries) InsertRepositoryEventIdempotent(ctx context.Context, arg InsertRepositoryEventIdempotentParams) (RepositoryEvent, error) {
+	row := q.db.QueryRow(ctx, insertRepositoryEventIdempotent,
+		arg.RepositoryID,
+		arg.EventType,
+		arg.ExternalID,
+		arg.Payload,
+		arg.OccurredAt,
+	)
+	var i RepositoryEvent
+	err := row.Scan(
+		&i.ID,
+		&i.RepositoryID,
+		&i.EventType,
+		&i.ExternalID,
+		&i.Payload,
+		&i.OccurredAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const listCommitsForMember = `-- name: ListCommitsForMember :many
 SELECT c.id, c.repository_id, c.sha, c.message, c.author, c.committed_at, c.created_at
 FROM commits c

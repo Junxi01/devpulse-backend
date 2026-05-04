@@ -1,0 +1,19 @@
+{
+  "delivery_id": "mock-evt-push-devpulse-001",
+  "event_type": "push",
+  "occurred_at": "2026-05-02T15:00:00Z",
+  "payload": {
+    "ref": "refs/heads/main",
+    "commits": [
+      {
+        "id": "a1b2c3d4e5f6789012345678901234567890abcd",
+        "message": "chore: mock push commit for local DevPulse demo",
+        "timestamp": "2026-05-02T14:59:00Z",
+        "author": {
+          "name": "Demo User",
+          "email": "demo@devpulse.local"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "delivery_id": "mock-evt-issue-devpulse-007",
+  "event_type": "issues",
+  "occurred_at": "2026-05-02T17:00:00Z",
+  "payload": {
+    "action": "opened",
+    "issue": {
+      "number": 7,
+      "title": "bug: mock issue for local DevPulse demo",
+      "state": "open",
+      "user": {
+        "login": "demo-user"
+      },
+      "labels": [
+        { "name": "bug" },
+        { "name": "demo" }
+      ]
+    }
+  }
+}

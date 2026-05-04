@@ -180,6 +180,32 @@ curl -sS "http://localhost:8080/repositories/${REPO_ID}/issues" \
 
 Optional query params: `limit`, `offset` (same defaults as other list endpoints).
 
+You do **not** need a real GitHub webhook or public URL to try this flow locally: use the mock importers below.
+
+### Mock GitHub event import (local JSON)
+
+Sample webhook-style files live in `seed/github_events/`:
+
+- `push.json` — includes one commit to populate **`commits`**
+- `pull_request_opened.json` — populates **`pull_requests`**
+- `issues_opened.json` — populates **`issues`**
+
+Each file also creates a row in **`repository_events`** (keyed by `delivery_id` as `external_id`).
+
+From the repository root, after the database is migrated and **`make seed-demo`** has created the demo user and demo repository (`github` / `devpulse/demo-backend`):
+
+```bash
+make seed-events
+```
+
+Imports are **idempotent**: re-running `make seed-events` skips rows that already exist (same `delivery_id`, pull request `number`, issue `number`, or commit `sha` per repository).
+
+- Override target repo: `go run ./cmd/seed-events -repo <repository-uuid>`
+- Override input directory: `go run ./cmd/seed-events -dir /path/to/json`
+- Default directory is `./seed/github_events` (resolved from the process working directory)
+
+Same safety gate as `make seed-demo`: `APP_MODE=demo` (default) or `SEED_DEMO=1`.
+
 ## Database Migrations
 
 Migrations live in `migrations/` and are applied in order.
@@ -251,6 +277,8 @@ This runs `sqlc generate` into `internal/db/generated/` (generated only; do not 
 ```
 cmd/api/main.go               # entrypoint: config, logger, db, server
 cmd/seed/main.go              # optional: idempotent local demo data (see make seed-demo)
+cmd/seed-events/main.go      # optional: import mock GitHub JSON (see make seed-events)
+internal/github/mock/         # local JSON → repository_events, PRs, issues, commits
 internal/config/config.go     # config loading + validation (.env supported)
 internal/logger/              # slog logger setup
 internal/middleware/          # shared HTTP middleware (request logging, etc.)

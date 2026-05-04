@@ -62,6 +62,35 @@ func (q *Queries) CreateRepository(ctx context.Context, arg CreateRepositoryPara
 	return i, err
 }
 
+const getRepositoryByProviderFullName = `-- name: GetRepositoryByProviderFullName :one
+SELECT id, project_id, provider, owner, name, full_name, external_id, default_branch, created_at, updated_at FROM repositories
+WHERE provider = $1 AND full_name = $2
+LIMIT 1
+`
+
+type GetRepositoryByProviderFullNameParams struct {
+	Provider string `json:"provider"`
+	FullName string `json:"full_name"`
+}
+
+func (q *Queries) GetRepositoryByProviderFullName(ctx context.Context, arg GetRepositoryByProviderFullNameParams) (Repository, error) {
+	row := q.db.QueryRow(ctx, getRepositoryByProviderFullName, arg.Provider, arg.FullName)
+	var i Repository
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.Provider,
+		&i.Owner,
+		&i.Name,
+		&i.FullName,
+		&i.ExternalID,
+		&i.DefaultBranch,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getRepositoryForWorkspaceMember = `-- name: GetRepositoryForWorkspaceMember :one
 SELECT r.id, r.project_id, r.provider, r.owner, r.name, r.full_name, r.external_id, r.default_branch, r.created_at, r.updated_at
 FROM repositories r

@@ -1,4 +1,4 @@
-.PHONY: run dev test fmt lint-placeholder docker-up docker-down docker-logs migrate-up migrate-down migrate-status sqlc db-reset seed-demo project-context-handoff
+.PHONY: run dev test fmt lint-placeholder docker-up docker-down docker-logs migrate-up migrate-down migrate-status sqlc db-reset seed-demo seed-events project-context-handoff
 
 # Load local env vars (DATABASE_URL, etc.) if present.
 ifneq (,$(wildcard .env))
@@ -54,6 +54,10 @@ db-reset:
 # Idempotent local demo user + workspace + project + repository (APP_MODE=demo, or set SEED_DEMO=1).
 seed-demo:
 	go run ./cmd/seed
+
+# Import mock GitHub JSON from ./seed/github_events into the demo repository (requires seed-demo first).
+seed-events:
+	go run ./cmd/seed-events
 
 # Append a dated line to PROJECT_CONTEXT.md session log (§9).
 # Usage: make project-context-handoff MSG='one-line summary, no secrets'

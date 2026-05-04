@@ -158,3 +158,66 @@ INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
 WHERE c.repository_id = $1 AND wm.user_id = $2
 ORDER BY c.committed_at DESC
 LIMIT $3 OFFSET $4;
+
+-- Idempotent inserts (no row returned when skipped due to unique constraint)
+
+-- name: InsertRepositoryEventIdempotent :one
+INSERT INTO repository_events (
+  repository_id,
+  event_type,
+  external_id,
+  payload,
+  occurred_at
+) VALUES (
+  $1, $2, $3, $4, $5
+)
+ON CONFLICT (repository_id, external_id) DO NOTHING
+RETURNING *;
+
+-- name: InsertPullRequestIdempotent :one
+INSERT INTO pull_requests (
+  repository_id,
+  number,
+  title,
+  state,
+  author,
+  base_branch,
+  head_branch,
+  changed_files,
+  additions,
+  deletions,
+  risk_level
+) VALUES (
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+)
+ON CONFLICT (repository_id, number) DO NOTHING
+RETURNING *;
+
+-- name: InsertIssueIdempotent :one
+INSERT INTO issues (
+  repository_id,
+  number,
+  title,
+  state,
+  author,
+  labels,
+  priority,
+  category
+) VALUES (
+  $1, $2, $3, $4, $5, $6, $7, $8
+)
+ON CONFLICT (repository_id, number) DO NOTHING
+RETURNING *;
+
+-- name: InsertCommitIdempotent :one
+INSERT INTO commits (
+  repository_id,
+  sha,
+  message,
+  author,
+  committed_at
+) VALUES (
+  $1, $2, $3, $4, $5
+)
+ON CONFLICT (repository_id, sha) DO NOTHING
+RETURNING *;

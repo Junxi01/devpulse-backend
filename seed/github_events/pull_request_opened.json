@@ -1,0 +1,25 @@
+{
+  "delivery_id": "mock-evt-pr-devpulse-042",
+  "event_type": "pull_request",
+  "occurred_at": "2026-05-02T16:00:00Z",
+  "payload": {
+    "action": "opened",
+    "pull_request": {
+      "number": 42,
+      "title": "feat: mock pull request for local demo",
+      "state": "open",
+      "user": {
+        "login": "demo-user"
+      },
+      "base": {
+        "ref": "main"
+      },
+      "head": {
+        "ref": "feature/mock-pr"
+      },
+      "changed_files": 3,
+      "additions": 12,
+      "deletions": 4
+    }
+  }
+}

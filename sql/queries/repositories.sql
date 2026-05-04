@@ -28,3 +28,8 @@ INNER JOIN projects p ON p.id = r.project_id
 INNER JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
 WHERE r.id = $1 AND wm.user_id = $2
 LIMIT 1;
+
+-- name: GetRepositoryByProviderFullName :one
+SELECT * FROM repositories
+WHERE provider = $1 AND full_name = $2
+LIMIT 1;
